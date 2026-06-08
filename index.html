@@ -805,7 +805,7 @@ async function submitForm() {
   btn.disabled = true;
 
   try {
-    if (SHEET_ENDPOINT && SHEET_ENDPOINT !== "https://script.google.com/macros/s/AKfycbwYGWW9Xq1txRVEOjz-m3jpxxzi0hchS_cgwiH8DZcNPRuzn435UsRrXEB3lBeFjfaTpQ/exec") {
+    if (SHEET_ENDPOINT && SHEET_ENDPOINT !== "YOUR_GOOGLE_APPS_SCRIPT_URL_HERE") {
       await fetch(SHEET_ENDPOINT, {
         method: "POST",
         mode: "no-cors",
