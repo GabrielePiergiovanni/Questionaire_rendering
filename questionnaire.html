@@ -1757,35 +1757,34 @@ JotForm.paymentExtrasOnTheFly([null,{"name":"head_1","qid":"1","text":"Analisi C
       all_spc[i].value = "261583119791363-261583119791363";
     }
   </script>
-</form>
-<div id="sr-status-message" class="sr-only" role="status" aria-live="polite" style="font-size: 0;"></div><script type="text/javascript">JotForm.ownerView=true;</script><script type="text/javascript">JotForm.isNewSACL=true;</script>
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    // 1. Trova il "recinto" che contiene le tue 9 scene
-    const container = document.querySelector('li[aria-label="Expandable Sections"]');
-
-    if (container) {
-        // 2. Prendi tutte le 9 sezioni (da section_145 a section_153) all'interno del recinto
-        const sections = Array.from(container.querySelectorAll('ul.form-section'));
-
-        // 3. Funzione matematica per mescolare in modo puramente casuale (Fisher-Yates)
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-            return array;
-        }
-
-        // 4. Mescola l'ordine dei blocchi
-        const shuffledSections = shuffleArray(sections);
-
-        // 5. Rimettili nella pagina nel nuovo ordine casuale
-        shuffledSections.forEach(section => {
-            container.appendChild(section);
-        });
-        
-        console.log("Shuffle delle scene completato con successo!");
+<script type="text/javascript">
+    var all_spc = document.querySelectorAll("form[id='261583119791363'] .si" + "mple" + "_spc");
+    for (var i = 0; i < all_spc.length; i++) {
+      all_spc[i].value = "261583119791363-261583119791363";
     }
-});
-</script>
+  </script>
+
+  <script>
+    JotForm.init(function() {
+        setTimeout(function() {
+            const container = document.querySelector('li[aria-label="Expandable Sections"]');
+            if (container) {
+                const sections = Array.from(container.querySelectorAll('ul.form-section'));
+                function shuffleArray(array) {
+                    for (let i = array.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [array[i], array[j]] = [array[j], array[i]];
+                    }
+                    return array;
+                }
+                const shuffledSections = shuffleArray(sections);
+                shuffledSections.forEach(section => {
+                    container.appendChild(section);
+                });
+                console.log("Shuffle completato!");
+            }
+        }, 1000);
+    });
+  </script>
+
+</form> ```
