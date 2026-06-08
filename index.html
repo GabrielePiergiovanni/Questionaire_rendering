@@ -468,7 +468,7 @@
 
 // Google Apps Script Web App URL
 // After deploying your Apps Script (see README comment below), paste the URL here:
-const SHEET_ENDPOINT = "YOUR_GOOGLE_APPS_SCRIPT_URL_HERE";
+const SHEET_ENDPOINT = "https://script.google.com/macros/s/AKfycbwYGWW9Xq1txRVEOjz-m3jpxxzi0hchS_cgwiH8DZcNPRuzn435UsRrXEB3lBeFjfaTpQ/exec";
 
 // Image pairs — add your actual image paths/URLs here.
 // Each pair: { a: "path/to/imageA.jpg", b: "path/to/imageB.jpg" }
@@ -805,7 +805,7 @@ async function submitForm() {
   btn.disabled = true;
 
   try {
-    if (SHEET_ENDPOINT && SHEET_ENDPOINT !== "YOUR_GOOGLE_APPS_SCRIPT_URL_HERE") {
+    if (SHEET_ENDPOINT && SHEET_ENDPOINT !== "https://script.google.com/macros/s/AKfycbwYGWW9Xq1txRVEOjz-m3jpxxzi0hchS_cgwiH8DZcNPRuzn435UsRrXEB3lBeFjfaTpQ/exec") {
       await fetch(SHEET_ENDPOINT, {
         method: "POST",
         mode: "no-cors",
