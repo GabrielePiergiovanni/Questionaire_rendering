@@ -326,6 +326,11 @@
     display: none;
   }
   body.admin .img-internal-label { display: block; }
+
+  @media (max-width: 768px) { 
+    .field-row { grid-template-columns: 1fr; }
+    .image-pair { grid-template-columns: 1fr; gap: 24px; } 
+  }
 </style>
 </head>
 <body>
