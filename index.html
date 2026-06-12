@@ -105,6 +105,7 @@
     margin-bottom: 8px;
   }
   input[type="text"],
+  input[type="number"],
   select {
     width: 100%;
     padding: 12px 16px;
@@ -118,6 +119,7 @@
     transition: border-color 0.2s;
   }
   input[type="text"]:focus,
+  input[type="number"]:focus,
   select:focus { border-color: var(--accent); }
 
   .field-group { margin-bottom: 24px; }
@@ -198,15 +200,72 @@
     align-items: center;
     justify-content: center;
     padding: 20px;
-    touch-action: pinch-zoom;
   }
   #lightbox-overlay.active { display: flex; }
-  #lightbox-overlay img {
+  #lightbox-panes {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+  }
+  .lightbox-pane {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.03);
+  }
+  .lightbox-pane img {
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
     border-radius: 6px;
+    cursor: zoom-in;
+    transition: transform 0.25s ease;
     touch-action: pinch-zoom;
+  }
+  .lightbox-pane img.zoomed {
+    max-width: none;
+    max-height: none;
+    width: auto;
+    height: 220%;
+    cursor: zoom-out;
+    transition: transform 0.15s ease-out;
+  }
+  .lightbox-pane-label {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(0,0,0,0.55);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 4px;
+    pointer-events: none;
+  }
+  .lightbox-hint {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255,255,255,0.6);
+    font-size: 0.75rem;
+    text-align: center;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  @media (max-width: 768px) {
+    #lightbox-panes { flex-direction: column; }
+    .lightbox-pane { width: 100%; }
   }
   #lightbox-close {
     position: absolute;
@@ -224,6 +283,7 @@
     justify-content: center;
     cursor: pointer;
     transition: background 0.15s;
+    z-index: 10;
   }
   #lightbox-close:hover { background: rgba(255,255,255,0.25); }
 
@@ -424,7 +484,7 @@
 
       <div class="field-group" id="fg-eta">
         <label class="field-label" for="inp-eta">Età</label>
-        <input type="number" id="inp-eta" placeholder="es. 28" min="1" max="120" inputmode="numeric">
+        <input type="number" id="inp-eta" placeholder="es. 28" min="1" max="120" inputmode="numeric" style="width:100%;">
         <div class="error-msg">Inserisci un'età valida</div>
       </div>
     </div>
@@ -567,11 +627,21 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════
-     LIGHTBOX — fullscreen image zoom (tap to open)
+     LIGHTBOX — fullscreen dual-image zoom (tap to open, tap again to zoom)
      ═══════════════════════════════════════════════ -->
-<div id="lightbox-overlay" onclick="closeLightbox(event)">
+<div id="lightbox-overlay" onclick="closeLightboxIfBackdrop(event)">
   <div id="lightbox-close" onclick="closeLightbox(event)">✕</div>
-  <img id="lightbox-img" src="" alt="Immagine ingrandita">
+  <div id="lightbox-panes">
+    <div class="lightbox-pane">
+      <div class="lightbox-pane-label">Immagine 1</div>
+      <img id="lightbox-img-1" src="" alt="Immagine 1 ingrandita" onclick="toggleZoom(event, this)">
+    </div>
+    <div class="lightbox-pane">
+      <div class="lightbox-pane-label">Immagine 2</div>
+      <img id="lightbox-img-2" src="" alt="Immagine 2 ingrandita" onclick="toggleZoom(event, this)">
+    </div>
+  </div>
+  <div class="lightbox-hint">Tocca un'immagine per zoomare · tocca fuori o ✕ per chiudere</div>
 </div>
 
 <script>
@@ -677,13 +747,13 @@ function buildComparisonPages() {
           <div class="image-pair">
             <div class="image-slot">
               <div class="comparison-label">Immagine 1</div>
-              <img src="${left}" alt="Immagine 1" onclick="openLightbox('${left}')" onerror="this.outerHTML='<div class=\'image-placeholder\'>Immagine 1<br><small>${left}</small></div>'">
+              <img src="${left}" alt="Immagine 1" onclick="openLightbox('${left}', '${right}')" onerror="this.outerHTML='<div class=\'image-placeholder\'>Immagine 1<br><small>${left}</small></div>'">
               <div class="image-zoom-hint">Tocca/clicca per ingrandire</div>
               <div class="img-internal-label">Interno: ${leftKey.toUpperCase()} (coppia ${pair.id})</div>
             </div>
             <div class="image-slot">
               <div class="comparison-label">Immagine 2</div>
-              <img src="${right}" alt="Immagine 2" onclick="openLightbox('${right}')" onerror="this.outerHTML='<div class=\'image-placeholder\'>Immagine 2<br><small>${right}</small></div>'">
+              <img src="${right}" alt="Immagine 2" onclick="openLightbox('${left}', '${right}')" onerror="this.outerHTML='<div class=\'image-placeholder\'>Immagine 2<br><small>${right}</small></div>'">
               <div class="image-zoom-hint">Tocca/clicca per ingrandire</div>
               <div class="img-internal-label">Interno: ${rightKey.toUpperCase()} (coppia ${pair.id})</div>
             </div>
@@ -963,13 +1033,57 @@ function showSuccess() {
 // ════════════════════════════════════════════════════════════
 // LIGHTBOX
 // ════════════════════════════════════════════════════════════
-function openLightbox(src) {
-  document.getElementById("lightbox-img").src = src;
+function openLightbox(src1, src2) {
+  const img1 = document.getElementById("lightbox-img-1");
+  const img2 = document.getElementById("lightbox-img-2");
+  img1.src = src1;
+  img2.src = src2;
+  img1.classList.remove("zoomed");
+  img2.classList.remove("zoomed");
+  img1.style.transformOrigin = "";
+  img2.style.transformOrigin = "";
   document.getElementById("lightbox-overlay").classList.add("active");
 }
+
 function closeLightbox(e) {
+  if (e) e.stopPropagation();
   document.getElementById("lightbox-overlay").classList.remove("active");
-  document.getElementById("lightbox-img").src = "";
+  const img1 = document.getElementById("lightbox-img-1");
+  const img2 = document.getElementById("lightbox-img-2");
+  img1.src = ""; img2.src = "";
+  img1.classList.remove("zoomed");
+  img2.classList.remove("zoomed");
+}
+
+function closeLightboxIfBackdrop(e) {
+  // Close only if the click landed on the overlay itself (not on panes/images)
+  if (e.target.id === "lightbox-overlay" || e.target.classList.contains("lightbox-hint")) {
+    closeLightbox(e);
+  }
+}
+
+function toggleZoom(e, img) {
+  e.stopPropagation();
+  const img1 = document.getElementById("lightbox-img-1");
+  const img2 = document.getElementById("lightbox-img-2");
+  const both = [img1, img2];
+
+  if (img.classList.contains("zoomed")) {
+    // Un-zoom both
+    both.forEach(im => {
+      im.classList.remove("zoomed");
+      im.style.transformOrigin = "";
+    });
+  } else {
+    // Zoom both, centered on the same relative point
+    const rect = img.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    both.forEach(im => {
+      im.style.transformOrigin = `${x}% ${y}%`;
+      im.classList.add("zoomed");
+    });
+  }
 }
 
 // ════════════════════════════════════════════════════════════
