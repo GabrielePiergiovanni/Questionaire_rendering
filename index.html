@@ -164,6 +164,16 @@
   object-fit: contain;
   border-radius: 8px;
   border: 1.5px solid var(--border);
+  cursor: zoom-in;
+  transition: opacity 0.15s;
+  }
+  .image-slot img:active { opacity: 0.85; }
+  .image-zoom-hint {
+    font-size: 0.7rem;
+    color: var(--ink-soft);
+    text-align: center;
+    margin-top: 6px;
+    letter-spacing: 0.03em;
   }
   .image-placeholder {
     width: 100%;
@@ -177,6 +187,45 @@
     color: var(--ink-soft);
     font-size: 0.82rem;
   }
+
+  /* ── Lightbox ── */
+  #lightbox-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 16, 14, 0.92);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    touch-action: pinch-zoom;
+  }
+  #lightbox-overlay.active { display: flex; }
+  #lightbox-overlay img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 6px;
+    touch-action: pinch-zoom;
+  }
+  #lightbox-close {
+    position: absolute;
+    top: 20px;
+    right: 24px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.12);
+    border: 1.5px solid rgba(255,255,255,0.3);
+    color: #fff;
+    font-size: 1.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  #lightbox-close:hover { background: rgba(255,255,255,0.25); }
 
   /* ── Likert table ── */
   .likert-table {
@@ -354,7 +403,9 @@
     <div class="step-chip">Introduzione</div>
     <h1 class="page-title">Benvenuto/a</h1>
     <p class="page-desc">
-      Questo studio analizza la percezione visiva di immagini renderizzate. Le chiediamo di compilare alcune informazioni preliminari prima di iniziare. I dati raccolti sono anonimi e utilizzati esclusivamente a fini di ricerca.
+      Questo studio analizza la percezione visiva di immagini renderizzate. Le chiediamo di compilare alcune informazioni preliminari prima di iniziare. I dati raccolti sono anonimi e utilizzati esclusivamente a fini di ricerca.<br><br>
+      Durata stimata del questionario: <strong>circa 10 minuti</strong>.<br><br>
+      ⚠️ <strong>Importante:</strong> evita di ricaricare o chiudere la pagina durante il questionario — in tal caso i progressi verranno persi e dovrai ricominciare da capo. Ti consigliamo di completarlo in un'unica sessione.
     </p>
 
     <div class="card">
@@ -372,42 +423,79 @@
       </div>
 
       <div class="field-group" id="fg-eta">
-        <label class="field-label" for="sel-eta">Fascia d'età</label>
-        <select id="sel-eta">
-          <option value="">— Seleziona —</option>
-          <option value="under18">Sotto i 18 anni</option>
-          <option value="18-24">18–24 anni</option>
-          <option value="25-34">25–34 anni</option>
-          <option value="35-44">35–44 anni</option>
-          <option value="45-54">45–54 anni</option>
-          <option value="55-64">55–64 anni</option>
-          <option value="65+">65 anni o più</option>
-        </select>
-        <div class="error-msg">Campo obbligatorio</div>
+        <label class="field-label" for="inp-eta">Età</label>
+        <input type="number" id="inp-eta" placeholder="es. 28" min="1" max="120" inputmode="numeric">
+        <div class="error-msg">Inserisci un'età valida</div>
       </div>
     </div>
 
     <div class="card">
-      <div class="field-group" id="fg-expertise">
-        <label class="field-label">Qual è il suo livello di esperienza nel campo del rendering / grafica 3D / fotografia?</label>
-        <div class="radio-group" id="rg-expertise">
-          <label class="radio-option">
-            <input type="radio" name="expertise" value="nessuna"> Nessuna — non ho esperienza nel settore
-          </label>
-          <label class="radio-option">
-            <input type="radio" name="expertise" value="base"> Base — utilizzo occasionalmente strumenti grafici o fotografici per hobby
-          </label>
-          <label class="radio-option">
-            <input type="radio" name="expertise" value="intermedio"> Intermedio — ho una formazione o pratica regolare nel settore (es. fotografia, grafica, architettura)
-          </label>
-          <label class="radio-option">
-            <input type="radio" name="expertise" value="avanzato"> Avanzato — professionista del settore (rendering, CG, post-produzione, fotografia professionale)
-          </label>
-          <label class="radio-option">
-            <input type="radio" name="expertise" value="esperto"> Esperto — specialista con anni di esperienza professionale nella qualità visiva e nella valutazione di render
-          </label>
+      <div class="field-group" id="fg-exp-3d">
+        <label class="field-label">Qual è il suo livello di esperienza nel campo del 3D modelling / modellazione 3D?</label>
+        <div class="radio-group" id="rg-exp-3d">
+          <label class="radio-option"><input type="radio" name="exp_3d" value="nessuna"> Nessuna — non ho esperienza nel settore</label>
+          <label class="radio-option"><input type="radio" name="exp_3d" value="base"> Base — utilizzo occasionalmente strumenti di modellazione 3D per hobby</label>
+          <label class="radio-option"><input type="radio" name="exp_3d" value="intermedio"> Intermedio — ho una formazione o pratica regolare nel settore</label>
+          <label class="radio-option"><input type="radio" name="exp_3d" value="avanzato"> Avanzato — professionista del settore</label>
+          <label class="radio-option"><input type="radio" name="exp_3d" value="esperto"> Esperto — specialista con anni di esperienza professionale</label>
         </div>
-        <div class="error-msg" id="err-expertise">Seleziona un'opzione</div>
+        <div class="error-msg" id="err-exp-3d">Seleziona un'opzione</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="field-group" id="fg-exp-vfx">
+        <label class="field-label">Qual è il suo livello di esperienza nel campo dei VFX?</label>
+        <div class="radio-group" id="rg-exp-vfx">
+          <label class="radio-option"><input type="radio" name="exp_vfx" value="nessuna"> Nessuna — non ho esperienza nel settore</label>
+          <label class="radio-option"><input type="radio" name="exp_vfx" value="base"> Base — utilizzo occasionalmente strumenti VFX per hobby</label>
+          <label class="radio-option"><input type="radio" name="exp_vfx" value="intermedio"> Intermedio — ho una formazione o pratica regolare nel settore</label>
+          <label class="radio-option"><input type="radio" name="exp_vfx" value="avanzato"> Avanzato — professionista del settore</label>
+          <label class="radio-option"><input type="radio" name="exp_vfx" value="esperto"> Esperto — specialista con anni di esperienza professionale</label>
+        </div>
+        <div class="error-msg" id="err-exp-vfx">Seleziona un'opzione</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="field-group" id="fg-exp-rendering">
+        <label class="field-label">Qual è il suo livello di esperienza nel campo del rendering?</label>
+        <div class="radio-group" id="rg-exp-rendering">
+          <label class="radio-option"><input type="radio" name="exp_rendering" value="nessuna"> Nessuna — non ho esperienza nel settore</label>
+          <label class="radio-option"><input type="radio" name="exp_rendering" value="base"> Base — utilizzo occasionalmente strumenti di rendering per hobby</label>
+          <label class="radio-option"><input type="radio" name="exp_rendering" value="intermedio"> Intermedio — ho una formazione o pratica regolare nel settore</label>
+          <label class="radio-option"><input type="radio" name="exp_rendering" value="avanzato"> Avanzato — professionista del settore</label>
+          <label class="radio-option"><input type="radio" name="exp_rendering" value="esperto"> Esperto — specialista con anni di esperienza professionale</label>
+        </div>
+        <div class="error-msg" id="err-exp-rendering">Seleziona un'opzione</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="field-group" id="fg-exp-foto">
+        <label class="field-label">Qual è il suo livello di esperienza nel campo della fotografia?</label>
+        <div class="radio-group" id="rg-exp-foto">
+          <label class="radio-option"><input type="radio" name="exp_foto" value="nessuna"> Nessuna — non ho esperienza nel settore</label>
+          <label class="radio-option"><input type="radio" name="exp_foto" value="base"> Base — scatto occasionalmente per hobby</label>
+          <label class="radio-option"><input type="radio" name="exp_foto" value="intermedio"> Intermedio — ho una formazione o pratica regolare nel settore</label>
+          <label class="radio-option"><input type="radio" name="exp_foto" value="avanzato"> Avanzato — professionista del settore</label>
+          <label class="radio-option"><input type="radio" name="exp_foto" value="esperto"> Esperto — specialista con anni di esperienza professionale</label>
+        </div>
+        <div class="error-msg" id="err-exp-foto">Seleziona un'opzione</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="field-group" id="fg-exp-ottica">
+        <label class="field-label">Qual è il suo livello di esperienza nel campo dell'ottica?</label>
+        <div class="radio-group" id="rg-exp-ottica">
+          <label class="radio-option"><input type="radio" name="exp_ottica" value="nessuna"> Nessuna — non ho esperienza nel settore</label>
+          <label class="radio-option"><input type="radio" name="exp_ottica" value="base"> Base — conoscenze occasionali o amatoriali</label>
+          <label class="radio-option"><input type="radio" name="exp_ottica" value="intermedio"> Intermedio — ho una formazione o pratica regolare nel settore</label>
+          <label class="radio-option"><input type="radio" name="exp_ottica" value="avanzato"> Avanzato — professionista del settore</label>
+          <label class="radio-option"><input type="radio" name="exp_ottica" value="esperto"> Esperto — specialista con anni di esperienza professionale</label>
+        </div>
+        <div class="error-msg" id="err-exp-ottica">Seleziona un'opzione</div>
       </div>
     </div>
 
@@ -453,6 +541,18 @@
       </div>
     </div>
 
+    <div class="card">
+      <div class="final-question" id="fq-commenti">
+        <h3>Commenti generali sulle immagini <span style="font-weight:400;color:var(--ink-soft);">(facoltativo)</span></h3>
+        <textarea id="inp-commenti" rows="4" placeholder="Scrivi qui eventuali osservazioni, dettagli notati, o altro feedback..." style="width:100%;padding:12px 16px;border:1.5px solid var(--border);border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:0.96rem;color:var(--ink);background:var(--surface);outline:none;resize:vertical;"></textarea>
+      </div>
+
+      <div class="final-question" id="fq-ai" style="margin-bottom:0;">
+        <h3>Secondo te, queste immagini sono generate con l'AI? <span style="font-weight:400;color:var(--ink-soft);">(facoltativo)</span></h3>
+        <textarea id="inp-ai" rows="4" placeholder="Scrivi qui la tua opinione e, se vuoi, il perché..." style="width:100%;padding:12px 16px;border:1.5px solid var(--border);border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:0.96rem;color:var(--ink);background:var(--surface);outline:none;resize:vertical;"></textarea>
+      </div>
+    </div>
+
     <button class="btn-next" onclick="submitForm()">Invia le risposte ✓</button>
   </div>
 </div>
@@ -464,6 +564,14 @@
   <div class="check">✓</div>
   <h2>Grazie per la partecipazione!</h2>
   <p>Le sue risposte sono state registrate con successo. Il suo contributo è prezioso per la nostra ricerca.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     LIGHTBOX — fullscreen image zoom (tap to open)
+     ═══════════════════════════════════════════════ -->
+<div id="lightbox-overlay" onclick="closeLightbox(event)">
+  <div id="lightbox-close" onclick="closeLightbox(event)">✕</div>
+  <img id="lightbox-img" src="" alt="Immagine ingrandita">
 </div>
 
 <script>
@@ -493,19 +601,20 @@ const IMAGE_PAIRS = [
 
 // Likert row definitions
 const LIKERT_ROWS = [
-  { key: "realismo",     label: "Realismo complessivo dell'immagine" },
-  { key: "dettagli_fini", label: "Correttezza dei dettagli fini (texture, bordi)" },
-  { key: "fedelta_foto", label: "Fedeltà a una vera fotografia" },
+  { key: "dettagli_fini", label: "Qualità dei dettagli (texture, bordi)" },
+  { key: "fedelta_foto", label: "Somiglianza con una foto vera" },
+  { key: "artificiale",  label: "Quale delle due sembra più artificiale?" },
   { key: "area_fuoco",   label: "Qualità area a fuoco dell'immagine" },
   { key: "area_sfocata", label: "Qualità area fuori fuoco dell'immagine" },
+  { key: "realismo",     label: "Realismo complessivo dell'immagine" },
 ];
 
 const LIKERT_COLS = [
-  { val: -2, label: "A molto superiore" },
-  { val: -1, label: "A leggermente superiore" },
+  { val: -2, label: "Molto superiore per immagine 1" },
+  { val: -1, label: "Leggermente superiore per immagine 1" },
   { val:  0, label: "Nessuna differenza significativa" },
-  { val:  1, label: "B leggermente superiore" },
-  { val:  2, label: "B molto superiore" },
+  { val:  1, label: "Leggermente superiore per immagine 2" },
+  { val:  2, label: "Molto superiore per immagine 2" },
 ];
 
 // ════════════════════════════════════════════════════════════
@@ -568,19 +677,19 @@ function buildComparisonPages() {
           <div class="image-pair">
             <div class="image-slot">
               <div class="comparison-label">Immagine 1</div>
-              <img src="${left}" alt="Immagine 1" onerror="this.outerHTML='<div class=\'image-placeholder\'>Immagine 1<br><small>${left}</small></div>'">
+              <img src="${left}" alt="Immagine 1" onclick="openLightbox('${left}')" onerror="this.outerHTML='<div class=\'image-placeholder\'>Immagine 1<br><small>${left}</small></div>'">
+              <div class="image-zoom-hint">Tocca/clicca per ingrandire</div>
               <div class="img-internal-label">Interno: ${leftKey.toUpperCase()} (coppia ${pair.id})</div>
             </div>
             <div class="image-slot">
               <div class="comparison-label">Immagine 2</div>
-              <img src="${right}" alt="Immagine 2" onerror="this.outerHTML='<div class=\'image-placeholder\'>Immagine 2<br><small>${right}</small></div>'">
+              <img src="${right}" alt="Immagine 2" onclick="openLightbox('${right}')" onerror="this.outerHTML='<div class=\'image-placeholder\'>Immagine 2<br><small>${right}</small></div>'">
+              <div class="image-zoom-hint">Tocca/clicca per ingrandire</div>
               <div class="img-internal-label">Interno: ${rightKey.toUpperCase()} (coppia ${pair.id})</div>
             </div>
           </div>
 
-          <p style="font-size:0.82rem;color:var(--ink-soft);margin-bottom:20px;font-style:italic;">
-            Nelle colonne: <strong>A = Immagine 1</strong>, <strong>B = Immagine 2</strong>
-          </p>
+
 
           <div class="table-wrap">
             <table class="likert-table" id="likert-${stepIdx}">
@@ -609,7 +718,7 @@ function buildComparisonPages() {
 
         <div class="card">
           <div class="field-group" id="fg-pref-${stepIdx}">
-            <label class="field-label">Tra l'Immagine 1 e l'Immagine 2 quale ti sembra visivamente più gradevole?</label>
+            <label class="field-label">Quale delle due immagini ti piace di più?</label>
             <div class="radio-group">
               <label class="radio-option"><input type="radio" name="pref_grad_${stepIdx}" value="1"> Immagine 1</label>
               <label class="radio-option"><input type="radio" name="pref_grad_${stepIdx}" value="2"> Immagine 2</label>
@@ -619,7 +728,7 @@ function buildComparisonPages() {
           </div>
 
           <div class="field-group" id="fg-conv-${stepIdx}" style="margin-top:20px;">
-            <label class="field-label">Quale delle due immagini ti sembra visivamente più convincente?</label>
+            <label class="field-label">Quale delle due immagini ti sembra più fotorealistica?</label>
             <div class="radio-group">
               <label class="radio-option"><input type="radio" name="pref_conv_${stepIdx}" value="1"> Immagine 1</label>
               <label class="radio-option"><input type="radio" name="pref_conv_${stepIdx}" value="2"> Immagine 2</label>
@@ -700,13 +809,21 @@ function validateDemo() {
   let ok = true;
   const nome = document.getElementById("inp-nome").value.trim();
   const cognome = document.getElementById("inp-cognome").value.trim();
-  const eta = document.getElementById("sel-eta").value;
-  const exp = document.querySelector("input[name=expertise]:checked");
+  const eta = document.getElementById("inp-eta").value;
+  const exp3d = document.querySelector("input[name=exp_3d]:checked");
+  const expVfx = document.querySelector("input[name=exp_vfx]:checked");
+  const expRendering = document.querySelector("input[name=exp_rendering]:checked");
+  const expFoto = document.querySelector("input[name=exp_foto]:checked");
+  const expOttica = document.querySelector("input[name=exp_ottica]:checked");
 
   setFgErr("fg-nome", !nome);     if (!nome) ok = false;
   setFgErr("fg-cognome", !cognome); if (!cognome) ok = false;
-  setFgErr("fg-eta", !eta);       if (!eta) ok = false;
-  setErr("err-expertise", !exp);   if (!exp) ok = false;
+  setFgErr("fg-eta", !eta || eta <= 0); if (!eta || eta <= 0) ok = false;
+  setErr("err-exp-3d", !exp3d);             if (!exp3d) ok = false;
+  setErr("err-exp-vfx", !expVfx);           if (!expVfx) ok = false;
+  setErr("err-exp-rendering", !expRendering); if (!expRendering) ok = false;
+  setErr("err-exp-foto", !expFoto);         if (!expFoto) ok = false;
+  setErr("err-exp-ottica", !expOttica);     if (!expOttica) ok = false;
   return ok;
 }
 
@@ -748,8 +865,12 @@ function collectCurrent() {
     answers.timestamp  = new Date().toISOString();
     answers.nome       = document.getElementById("inp-nome").value.trim();
     answers.cognome    = document.getElementById("inp-cognome").value.trim();
-    answers.eta        = document.getElementById("sel-eta").value;
-    answers.expertise  = document.querySelector("input[name=expertise]:checked")?.value;
+    answers.eta        = document.getElementById("inp-eta").value;
+    answers.expertise_3d        = document.querySelector("input[name=exp_3d]:checked")?.value;
+    answers.expertise_vfx       = document.querySelector("input[name=exp_vfx]:checked")?.value;
+    answers.expertise_rendering = document.querySelector("input[name=exp_rendering]:checked")?.value;
+    answers.expertise_foto      = document.querySelector("input[name=exp_foto]:checked")?.value;
+    answers.expertise_ottica    = document.querySelector("input[name=exp_ottica]:checked")?.value;
     answers.pageOrder  = pageOrder.map(i => IMAGE_PAIRS[i].id).join(",");
     answers.swapMap    = pageOrder.map(i => swapMap[i] ? "swapped" : "normal").join(",");
   } else if (currentPage <= 9) {
@@ -784,6 +905,8 @@ function collectCurrent() {
 function collectFinal() {
   answers.differenze_notate  = document.querySelector("input[name=differenze]:checked")?.value;
   answers.capacita_dettagli  = starRatings["dettagli"];
+  answers.commenti_generali  = document.getElementById("inp-commenti").value.trim();
+  answers.opinione_ai        = document.getElementById("inp-ai").value.trim();
 }
 
 // ════════════════════════════════════════════════════════════
@@ -835,6 +958,18 @@ function showSuccess() {
   document.getElementById("success-screen").style.display = "flex";
   document.getElementById("progressBar").style.width = "100%";
   window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// ════════════════════════════════════════════════════════════
+// LIGHTBOX
+// ════════════════════════════════════════════════════════════
+function openLightbox(src) {
+  document.getElementById("lightbox-img").src = src;
+  document.getElementById("lightbox-overlay").classList.add("active");
+}
+function closeLightbox(e) {
+  document.getElementById("lightbox-overlay").classList.remove("active");
+  document.getElementById("lightbox-img").src = "";
 }
 
 // ════════════════════════════════════════════════════════════
