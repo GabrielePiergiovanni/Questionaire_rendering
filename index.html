@@ -716,16 +716,21 @@ function getDeviceType() {
 
 // Lightweight, non-invasive device signal (no canvas/WebGL/audio fingerprinting).
 // Combined with deviceId, helps flag likely-duplicate submissions without
-// tracking users across sites or sessions.
-function getDeviceSignal() {
+// tracking users across sites or sessions. Compacted into a short hash so
+// the raw values (screen size, timezone, etc.) aren't exposed in the sheet.
+async function getDeviceSignal() {
   try {
-    return [
+    const raw = [
       navigator.platform || "",
       navigator.language || "",
       `${screen.width}x${screen.height}`,
       Intl.DateTimeFormat().resolvedOptions().timeZone || "",
       navigator.hardwareConcurrency || ""
-    ].join(" | ");
+    ].join("|");
+
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw));
+    const hex = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+    return hex.slice(0, 12); // short compact code
   } catch (e) {
     return "unavailable";
   }
@@ -733,7 +738,7 @@ function getDeviceSignal() {
 
 const deviceId     = getOrCreateDeviceId();
 const deviceType   = getDeviceType();
-const deviceSignal = getDeviceSignal();
+let deviceSignal = "pending";
 
 const COMPLETED_KEY = "rendering_study_completed";
 function hasAlreadyCompleted() {
@@ -772,6 +777,7 @@ function init() {
     document.getElementById("progressBar").style.width = "100%";
     return;
   }
+  getDeviceSignal().then(sig => { deviceSignal = sig; });
   pageOrder = shuffle([...IMAGE_PAIRS.keys()]);
   IMAGE_PAIRS.forEach((_, i) => { swapMap[i] = Math.random() < 0.5; });
   buildComparisonPages();
