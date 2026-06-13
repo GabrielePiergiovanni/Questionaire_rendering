@@ -377,7 +377,7 @@
   }
 
   /* ── Success screen ── */
-  #success-screen {
+  #success-screen, #already-completed-screen {
     display: none;
     min-height: 80vh;
     align-items: center;
@@ -386,13 +386,13 @@
     text-align: center;
     padding: 48px 24px;
   }
-  #success-screen .check { font-size: 4rem; margin-bottom: 20px; }
-  #success-screen h2 {
+  #success-screen .check, #already-completed-screen .check { font-size: 4rem; margin-bottom: 20px; }
+  #success-screen h2, #already-completed-screen h2 {
     font-family: 'DM Serif Display', serif;
     font-size: 2rem;
     margin-bottom: 12px;
   }
-  #success-screen p { color: var(--ink-soft); max-width: 420px; }
+  #success-screen p, #already-completed-screen p { color: var(--ink-soft); max-width: 420px; }
 
   /* ── Error message ── */
   .error-msg {
@@ -466,19 +466,6 @@
     </p>
 
     <div class="card">
-      <div class="field-row">
-        <div class="field-group" id="fg-nome">
-          <label class="field-label" for="inp-nome">Nome</label>
-          <input type="text" id="inp-nome" placeholder="es. Mario">
-          <div class="error-msg">Campo obbligatorio</div>
-        </div>
-        <div class="field-group" id="fg-cognome">
-          <label class="field-label" for="inp-cognome">Cognome</label>
-          <input type="text" id="inp-cognome" placeholder="es. Rossi">
-          <div class="error-msg">Campo obbligatorio</div>
-        </div>
-      </div>
-
       <div class="field-group" id="fg-eta">
         <label class="field-label" for="inp-eta">Età</label>
         <input type="number" id="inp-eta" placeholder="es. 28" min="1" max="120" inputmode="numeric" style="width:100%;">
@@ -624,6 +611,15 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════
+     ALREADY COMPLETED SCREEN
+     ═══════════════════════════════════════════════ -->
+<div id="already-completed-screen">
+  <div class="check">✓</div>
+  <h2>Questionario già completato</h2>
+  <p>Risulta che hai già completato questo questionario da questo dispositivo/browser. Grazie ancora per la partecipazione!</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════
      LIGHTBOX — fullscreen dual-image zoom (tap to open, tap again to zoom)
      ═══════════════════════════════════════════════ -->
 <div id="lightbox-overlay" onclick="closeLightboxIfBackdrop(event)">
@@ -695,6 +691,64 @@ let totalPages     = 11; // 1 demographics + 9 pairs + 1 final
 let starRatings    = {};
 let answers        = {};
 
+// Persistent device identifier (survives reloads, helps spot repeat submissions
+// from the same browser without asking for personal info)
+function getOrCreateDeviceId() {
+  const KEY = "rendering_study_device_id";
+  try {
+    let id = localStorage.getItem(KEY);
+    if (!id) {
+      id = (crypto.randomUUID ? crypto.randomUUID() : "dev_" + Date.now().toString(36) + Math.random().toString(36).slice(2));
+      localStorage.setItem(KEY, id);
+    }
+    return id;
+  } catch (e) {
+    return "unavailable";
+  }
+}
+
+// Simple desktop/mobile detection
+function getDeviceType() {
+  const ua = navigator.userAgent || "";
+  const isMobile = /Android|iPhone|iPad|iPod|Mobile|Tablet/i.test(ua) || window.innerWidth <= 768;
+  return isMobile ? "mobile" : "desktop";
+}
+
+// Lightweight, non-invasive device signal (no canvas/WebGL/audio fingerprinting).
+// Combined with deviceId, helps flag likely-duplicate submissions without
+// tracking users across sites or sessions.
+function getDeviceSignal() {
+  try {
+    return [
+      navigator.platform || "",
+      navigator.language || "",
+      `${screen.width}x${screen.height}`,
+      Intl.DateTimeFormat().resolvedOptions().timeZone || "",
+      navigator.hardwareConcurrency || ""
+    ].join(" | ");
+  } catch (e) {
+    return "unavailable";
+  }
+}
+
+const deviceId     = getOrCreateDeviceId();
+const deviceType   = getDeviceType();
+const deviceSignal = getDeviceSignal();
+
+const COMPLETED_KEY = "rendering_study_completed";
+function hasAlreadyCompleted() {
+  try {
+    return localStorage.getItem(COMPLETED_KEY) === "1";
+  } catch (e) {
+    return false;
+  }
+}
+function markAsCompleted() {
+  try {
+    localStorage.setItem(COMPLETED_KEY, "1");
+  } catch (e) {}
+}
+
 // Admin mode: add ?admin=1 to URL to see internal A/B labels
 if (new URLSearchParams(location.search).get("admin") === "1") {
   document.body.classList.add("admin");
@@ -712,6 +766,12 @@ function shuffle(arr) {
 }
 
 function init() {
+  if (hasAlreadyCompleted()) {
+    document.querySelector(".page.active")?.classList.remove("active");
+    document.getElementById("already-completed-screen").style.display = "flex";
+    document.getElementById("progressBar").style.width = "100%";
+    return;
+  }
   pageOrder = shuffle([...IMAGE_PAIRS.keys()]);
   IMAGE_PAIRS.forEach((_, i) => { swapMap[i] = Math.random() < 0.5; });
   buildComparisonPages();
@@ -874,8 +934,6 @@ function setFgErr(id, show) {
 
 function validateDemo() {
   let ok = true;
-  const nome = document.getElementById("inp-nome").value.trim();
-  const cognome = document.getElementById("inp-cognome").value.trim();
   const eta = document.getElementById("inp-eta").value;
   const exp3d = document.querySelector("input[name=exp_3d]:checked");
   const expVfx = document.querySelector("input[name=exp_vfx]:checked");
@@ -883,8 +941,6 @@ function validateDemo() {
   const expFoto = document.querySelector("input[name=exp_foto]:checked");
   const expOttica = document.querySelector("input[name=exp_ottica]:checked");
 
-  setFgErr("fg-nome", !nome);     if (!nome) ok = false;
-  setFgErr("fg-cognome", !cognome); if (!cognome) ok = false;
   setFgErr("fg-eta", !eta || eta <= 0); if (!eta || eta <= 0) ok = false;
   setErr("err-exp-3d", !exp3d);             if (!exp3d) ok = false;
   setErr("err-exp-vfx", !expVfx);           if (!expVfx) ok = false;
@@ -929,9 +985,10 @@ function validateFinal() {
 function collectCurrent() {
   if (currentPage === 0) {
     answers.sessionId  = sessionId;
+    answers.deviceId   = deviceId;
+    answers.deviceType = deviceType;
+    answers.deviceSignal = deviceSignal;
     answers.timestamp  = new Date().toISOString();
-    answers.nome       = document.getElementById("inp-nome").value.trim();
-    answers.cognome    = document.getElementById("inp-cognome").value.trim();
     answers.eta        = document.getElementById("inp-eta").value;
     answers.expertise_3d        = document.querySelector("input[name=exp_3d]:checked")?.value;
     answers.expertise_vfx       = document.querySelector("input[name=exp_vfx]:checked")?.value;
@@ -1021,6 +1078,7 @@ async function submitForm() {
 }
 
 function showSuccess() {
+  markAsCompleted();
   document.querySelector(".page.active").style.display = "none";
   document.getElementById("success-screen").style.display = "flex";
   document.getElementById("progressBar").style.width = "100%";
